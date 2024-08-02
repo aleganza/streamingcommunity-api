@@ -1,7 +1,16 @@
 import axios from "axios";
+import { load } from "cheerio";
 
 import Parser from "../models/parser";
-import { Result, Search, SubOrDub, Type } from "../models/types";
+import {
+  Result,
+  Search,
+  Season,
+  ShowInfo,
+  SubOrDub,
+  Trailer,
+} from "../models/types";
+import { parseDate, parseImages, parseIsHD } from "../utils/utils";
 
 class StreamingCommunity extends Parser {
   override name = "StreamingCommunity";
@@ -19,9 +28,6 @@ class StreamingCommunity extends Parser {
       // pagination ain't workin :(
       // const res = await axios.get(`${this.baseUrl}/api/search?q=${query}&page=${page}`);
 
-      const getImageSource = (el: any, imageType: string) =>
-        el.images.find((image: any) => image.type === imageType);
-
       const searchResult: Search<Result> = {
         currentPage: res.data.current_page,
         hasNextPage: res.data.current_page !== res.data.last_page,
@@ -34,37 +40,12 @@ class StreamingCommunity extends Parser {
         searchResult.results.push({
           id: `${el.id}-${el.slug}`,
           title: el.name,
-          type:
-            el.type === "tv"
-              ? Type.TV
-              : el.type === "movie"
-              ? Type.Movie
-              : undefined,
+          type: el.type ?? undefined,
           score: parseFloat(el?.score),
           subOrDub: el.sub_ita === 0 ? SubOrDub.DUB : SubOrDub.SUB,
-          lastAirDate: el.last_air_date
-            ? {
-                year: el.last_air_date.split("-")[0],
-                month: el.last_air_date.split("-")[1],
-                day: el.last_air_date.split("-")[2],
-              }
-            : undefined,
-          seasonsCount: el.seasons_count,
-          cover: getImageSource(el, "cover")
-            ? `${this.imagesUrl}/${getImageSource(el, "cover").filename}`
-            : undefined,
-          coverMobile: getImageSource(el, "coverMobile")
-            ? `${this.imagesUrl}/${getImageSource(el, "coverMobile").filename}`
-            : undefined,
-          logo: getImageSource(el, "logo")
-            ? `${this.imagesUrl}/${getImageSource(el, "logo").filename}`
-            : undefined,
-          poster: getImageSource(el, "poster")
-            ? `${this.imagesUrl}/${getImageSource(el, "poster").filename}`
-            : undefined,
-          background: getImageSource(el, "background")
-            ? `${this.imagesUrl}/${getImageSource(el, "background").filename}`
-            : undefined,
+          lastAirDate: parseDate(el.last_air_date),
+          seasonsCount: el.seasons_count ?? undefined,
+          images: parseImages(this.imagesUrl, el.images),
         })
       );
 
@@ -73,6 +54,66 @@ class StreamingCommunity extends Parser {
       throw new Error((error as Error).message);
     }
   }
+
+  override fetchShowInfo = async (showId: string): Promise<ShowInfo> => {
+    try {
+      const res = await axios.get(`${this.baseUrl}/titles/${showId}`);
+      const $ = load(res.data);
+
+      const data = JSON.parse("" + $("#app").attr("data-page") + "").props;
+
+      const result: ShowInfo = {
+        id: `${data.title.id}-${data.title.slug}`,
+        title: data.title.name,
+        plot: data.title.plot ?? undefined,
+        quality: data.title.quality ?? undefined,
+        type: data.title.type ?? undefined,
+        originalTitle: data.title.original_name ?? undefined,
+        status: data.title.status ?? undefined,
+        runtime: data.title.runtime ?? undefined,
+        views: data.title.views ?? undefined,
+        dailyViews: data.title.daily_views ?? undefined,
+        score: parseFloat(data.title.score),
+        releaseDate: parseDate(data.title.release_date),
+        lastAirDate: parseDate(data.title.last_air_date),
+        subOrDub: data.title.sub_ita === 0 ? SubOrDub.DUB : SubOrDub.SUB,
+        seasonsCount: data.title.seasons_count ?? undefined,
+        seasons:
+          data.title.seasons.map((el: any): Season => {
+            return {
+              id: el.id,
+              number: el.number ?? undefined,
+              title: el.name ?? undefined,
+              plot: el.plot ?? undefined,
+              releaseDate: parseDate(el.release_date),
+              showId: el.title_id ?? undefined,
+              episodesCount: el.episodes_count ?? undefined,
+            };
+          }) ?? undefined,
+        trailers:
+          data.title.trailers.map((el: any): Trailer => {
+            return {
+              id: el.id,
+              title: el.name ?? undefined,
+              isHD: parseIsHD(el.is_hd),
+              youtubeId: el.youtube_id ?? undefined,
+              showId: el.title_id ?? undefined,
+            };
+          }) ?? undefined,
+        images: parseImages(this.imagesUrl, data.title.images),
+        genres: data.title.genres.map((el: any): string => {
+          return el.name;
+        }),
+        keywords: data.title.keywords.map((el: any): string => {
+          return el.name;
+        }),
+      };
+
+      return result;
+    } catch (error) {
+      throw new Error((error as Error).message);
+    }
+  };
 }
 
 export default StreamingCommunity;

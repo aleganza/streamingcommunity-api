@@ -1,14 +1,18 @@
+/* TODO: maybe custom types/enums:
+  Result.type
+  ShowInfo.quality
+*/
+
+/* TODO: types not tested:
+  ShowInfo.runtime
+*/
+
 export interface Search<T> {
   currentPage?: number;
   hasNextPage?: boolean;
   totalPages?: number;
   totalResults?: number;
-  results: T[]
-}
-
-export enum Type {
-  TV = "tv",
-  Movie = "movie",
+  results: T[];
 }
 
 export enum SubOrDub {
@@ -16,24 +20,64 @@ export enum SubOrDub {
   DUB = "dub",
 }
 
-export interface LastAirDate {
+export interface Date {
   year: number;
   month: number;
   day: number;
 }
 
-export interface Result {
-  // TODO: pages types
-  id: string;
-  title: string;
-  type?: Type;
-  score?: number;
-  subOrDub?: SubOrDub;
-  lastAirDate?: LastAirDate;
-  seasonsCount?: number;
+export interface Images {
   cover?: string;
   coverMobile?: string;
   logo?: string;
   poster?: string;
   background?: string; // banner
+}
+
+export interface Season {
+  id: number;
+  number?: number;
+  title?: string;
+  plot?: string;
+  releaseDate?: Date;
+  showId?: number;
+  episodesCount?: number;
+}
+
+export interface Result {
+  id: string;
+  title: string;
+  type?: string;
+  score?: number;
+  subOrDub?: SubOrDub;
+  lastAirDate?: Date;
+  seasonsCount?: number;
+  images?: Images;
+}
+
+export interface Trailer {
+  id: number;
+  title?: string;
+  isHD?: boolean;
+  youtubeId?: string;
+  showId?: number;
+}
+
+export interface ShowInfo extends Result {
+  plot?: string;
+  quality?: string;
+  originalTitle?: string;
+  status?: string;
+  runtime?: string;
+  views?: number;
+  dailyViews?: number;
+  releaseDate?: Date;
+  seasons?: Season[];
+  trailers?: Trailer[];
+  images?: Images,
+  genres?: string[],
+  // mainActors
+  // mainDirectors
+  // preview
+  keywords?: string[],
 }
