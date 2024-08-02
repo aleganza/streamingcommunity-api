@@ -5,6 +5,7 @@
   "types": "dist/index.d.ts",
   "description": "",
   "scripts": {
+    "start": "npm run build && node dist/index.js",
     "build": "tsc"
   },
   "keywords": [],

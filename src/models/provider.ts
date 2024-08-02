@@ -10,6 +10,11 @@ abstract class Provider {
   abstract readonly baseUrl: string;
 
   /**
+   * Provider images url
+   */
+  abstract readonly imagesUrl: string;
+
+  /**
    * Provider logo
    */
   readonly logo: string =
