@@ -3,6 +3,8 @@ import { load } from "cheerio";
 
 import Parser from "../models/parser";
 import {
+  Episode,
+  Individual,
   Result,
   Search,
   Season,
@@ -55,9 +57,14 @@ class StreamingCommunity extends Parser {
     }
   }
 
-  override fetchShowInfo = async (showId: string): Promise<ShowInfo> => {
+  override fetchShowInfo = async (
+    showId: string,
+    season: number = 1
+  ): Promise<ShowInfo> => {
     try {
-      const res = await axios.get(`${this.baseUrl}/titles/${showId}`);
+      const res = await axios.get(
+        `${this.baseUrl}/titles/${showId}/stagione-${season}`
+      );
       const $ = load(res.data);
 
       const data = JSON.parse("" + $("#app").attr("data-page") + "").props;
@@ -82,11 +89,10 @@ class StreamingCommunity extends Parser {
           data.title.seasons.map((el: any): Season => {
             return {
               id: el.id,
-              number: el.number ?? undefined,
+              number: el.number,
               title: el.name ?? undefined,
               plot: el.plot ?? undefined,
               releaseDate: parseDate(el.release_date),
-              showId: el.title_id ?? undefined,
               episodesCount: el.episodes_count ?? undefined,
             };
           }) ?? undefined,
@@ -97,16 +103,50 @@ class StreamingCommunity extends Parser {
               title: el.name ?? undefined,
               isHD: parseIsHD(el.is_hd),
               youtubeId: el.youtube_id ?? undefined,
-              showId: el.title_id ?? undefined,
             };
           }) ?? undefined,
         images: parseImages(this.imagesUrl, data.title.images),
         genres: data.title.genres.map((el: any): string => {
           return el.name;
         }),
+        mainActors: data.title.main_actors.map((el: any): Individual => {
+          return {
+            id: el.id ?? undefined,
+            name: el.name ?? undefined,
+            job: el.job ?? undefined,
+          };
+        }),
+        mainDirectors: data.title.main_directors.map((el: any): Individual => {
+          return {
+            id: el.id ?? undefined,
+            name: el.name ?? undefined,
+            job: el.job ?? undefined,
+          };
+        }),
+        preview: data.title.preview ?? undefined,
         keywords: data.title.keywords.map((el: any): string => {
           return el.name;
         }),
+        loadedSeason: {
+          id: data.loadedSeason.id,
+          number: data.loadedSeason.number,
+          title: data.loadedSeason.name ?? undefined,
+          plot: data.loadedSeason.plot ?? undefined,
+          releaseDate: parseDate(data.loadedSeason.release_date),
+          episodesCount:
+            data.title.seasons[data.loadedSeason.number - 1].episodes_count ??
+            undefined,
+          episodes: data.loadedSeason.episodes.map((el: any): Episode => {
+            return {
+              id: el.id,
+              number: el.number,
+              title: el.name ?? undefined,
+              plot: el.plot ?? undefined,
+              durationMinutes: el.duration ?? undefined,
+              images: parseImages(this.imagesUrl, el.images),
+            };
+          }),
+        },
       };
 
       return result;

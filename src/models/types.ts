@@ -1,6 +1,7 @@
 /* TODO: maybe custom types/enums:
   Result.type
   ShowInfo.quality
+  ShowInfo.preview
 */
 
 /* TODO: types not tested:
@@ -36,11 +37,10 @@ export interface Images {
 
 export interface Season {
   id: number;
-  number?: number;
+  number: number;
   title?: string;
   plot?: string;
   releaseDate?: Date;
-  showId?: number;
   episodesCount?: number;
 }
 
@@ -60,7 +60,25 @@ export interface Trailer {
   title?: string;
   isHD?: boolean;
   youtubeId?: string;
-  showId?: number;
+}
+
+export interface Individual {
+  id: number;
+  name?: string;
+  job?: string;
+}
+
+export interface Episode {
+  id: number;
+  number: number;
+  title?: string;
+  plot?: string;
+  durationMinutes?: number;
+  images?: Images;
+}
+
+export interface LoadedSeason extends Season {
+  episodes?: Episode[];
 }
 
 export interface ShowInfo extends Result {
@@ -74,10 +92,12 @@ export interface ShowInfo extends Result {
   releaseDate?: Date;
   seasons?: Season[];
   trailers?: Trailer[];
-  images?: Images,
-  genres?: string[],
-  // mainActors
-  // mainDirectors
-  // preview
-  keywords?: string[],
+  images?: Images;
+  genres?: string[];
+  mainActors?: Individual[];
+  mainDirectors?: Individual[];
+  preview?: any;
+  keywords?: string[];
+  loadedSeason?: LoadedSeason;
+  // sliders
 }
