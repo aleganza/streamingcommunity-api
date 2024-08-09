@@ -1,5 +1,5 @@
 import Provider from "./provider";
-import { Result, Search, ShowInfo } from "./types";
+import { Result, Search, ShowInfo, Source } from "./types";
 
 abstract class Parser extends Provider {
   /**
@@ -10,6 +10,12 @@ abstract class Parser extends Provider {
   abstract search(query: string, ...args: any): Promise<Search<Result>>;
 
   abstract fetchShowInfo(showId: string, ...args: any): Promise<ShowInfo>;
+
+  abstract fetchEpisodeSources(
+    showId: string,
+    episodeId: number,
+    ...args: any
+  ): Promise<Source>;
 }
 
 export default Parser;

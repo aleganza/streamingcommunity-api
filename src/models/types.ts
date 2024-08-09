@@ -101,3 +101,14 @@ export interface ShowInfo extends Result {
   loadedSeason?: LoadedSeason;
   // sliders
 }
+
+export interface Url {
+  url: string;
+  quality?: string;
+  isM3U8?: boolean;
+}
+
+export interface Source {
+  sources: Url[];
+  download?: string
+}

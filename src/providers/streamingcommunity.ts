@@ -9,6 +9,7 @@ import {
   Search,
   Season,
   ShowInfo,
+  Source,
   SubOrDub,
   Trailer,
 } from "../models/types";
@@ -150,6 +151,49 @@ class StreamingCommunity extends Parser {
       };
 
       return result;
+    } catch (error) {
+      throw new Error((error as Error).message);
+    }
+  };
+
+  override fetchEpisodeSources = async (
+    showId: string,
+    episodeId: number
+  ): Promise<Source> => {
+    try {
+      const res = await axios.get(
+        `${this.baseUrl}/iframe/${showId}?episode_id=${episodeId}&next_episode=1`
+      );
+      const $ = load(res.data);
+      const url = $("iframe").attr("src");
+
+      const episodeSources: Source = {
+        sources: [],
+      };
+
+      if (url) {
+        console.log(url);
+        const res = await axios.get(url);
+        const $ = load(res.data);
+
+        const domain = $('script:contains("window.video")')
+          .text()
+          ?.match(/url: '(.*)'/)![1];
+        const token = $('script:contains("window.video")')
+          .text()
+          ?.match(/token': '(.*)'/)![1];
+        const expires = $('script:contains("window.video")')
+          .text()
+          ?.match(/expires': '(.*)'/)![1];
+
+        episodeSources.sources.push({
+          url: `${domain}?token=${token}&referer=&expires=${expires}&h=1`,
+          quality: `default`,
+          isM3U8: true,
+        });
+      }
+
+      return episodeSources;
     } catch (error) {
       throw new Error((error as Error).message);
     }
